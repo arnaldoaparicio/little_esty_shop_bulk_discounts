@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe 'merchant dashboard' do
   before :each do
     @merchant1 = Merchant.create!(name: 'Hair Care')
+    @discount = BulkDiscount.create!(percentage: 20, threshold: 10, merchant_id: @merchant1.id)
 
     @customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
     @customer_2 = Customer.create!(first_name: 'Cecilia', last_name: 'Jones')
@@ -118,5 +119,10 @@ RSpec.describe 'merchant dashboard' do
 
   it "shows the date that the invoice was created in this format: Monday, July 18, 2019" do
     expect(page).to have_content(@invoice_1.created_at.strftime("%A, %B %-d, %Y"))
+  end
+
+  it 'shows a link to the merchants bulk discounts' do
+    click_link 'Bulk Discounts'
+    expect(current_path).to eq(merchant_bulk_discounts_path(@merchant1))
   end
 end
