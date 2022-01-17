@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe 'merchant bulk discounts index' do
+RSpec.describe 'merchant bulk discounts index', type: :feature do
   before :each do
     @merchant1 = Merchant.create!(name: 'Hair Care')
     @merchant2 = Merchant.create!(name: 'Skin Care')
@@ -74,5 +74,11 @@ describe 'merchant bulk discounts index' do
       expect(page).to_not have_content(@discount4.percentage)
       expect(page).to_not have_content(@discount4.threshold)
     end
+  end
+
+  it 'shows the link to create a discount' do
+    expect(page).to have_content('Create New Bulk Discount')
+    click_link 'Create New Bulk Discount'
+    expect(current_path).to eq(new_merchant_bulk_discount_path(@merchant1))
   end
 end
