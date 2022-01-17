@@ -4,9 +4,9 @@ RSpec.describe 'merchant bulk discounts index', type: :feature do
   before :each do
     @merchant1 = Merchant.create!(name: 'Hair Care')
     @merchant2 = Merchant.create!(name: 'Skin Care')
-    @discount1 = BulkDiscount.create!(percentage: 20, threshold: 10, merchant_id: @merchant1.id)
+    @discount1 = BulkDiscount.create!(percentage: 7, threshold: 10, merchant_id: @merchant1.id)
     @discount2 = BulkDiscount.create!(percentage: 5, threshold: 2, merchant_id: @merchant1.id)
-    @discount3 = BulkDiscount.create!(percentage: 10, threshold: 5, merchant_id: @merchant1.id)
+    @discount3 = BulkDiscount.create!(percentage: 8, threshold: 6, merchant_id: @merchant1.id)
     @discount4 = BulkDiscount.create!(percentage: 40, threshold: 12, merchant_id: @merchant2.id)
 
     @customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
@@ -80,5 +80,23 @@ RSpec.describe 'merchant bulk discounts index', type: :feature do
     expect(page).to have_content('Create New Bulk Discount')
     click_link 'Create New Bulk Discount'
     expect(current_path).to eq(new_merchant_bulk_discount_path(@merchant1))
+  end
+
+  it 'deletes the bulk discount1' do
+    within("#bulk_discount-#{@discount1.id}") do
+      expect(page).to have_link('Delete')
+      click_link 'Delete'
+    end
+    expect(page).to_not have_content(@discount1.percentage)
+    expect(page).to_not have_content(@discount1.threshold)
+  end
+
+  it 'deletes the bulk discount2' do
+    within("#bulk_discount-#{@discount2.id}") do
+      expect(page).to have_link('Delete')
+      click_link 'Delete'
+    end
+    expect(page).to_not have_content(@discount2.percentage)
+    expect(page).to_not have_content(@discount2.threshold)
   end
 end
