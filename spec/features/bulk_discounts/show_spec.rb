@@ -3,9 +3,7 @@ require 'rails_helper'
 describe 'merchant bulk discounts show page' do
   before :each do
     @merchant1 = Merchant.create!(name: 'Hair Care')
-    @merchant2 = Merchant.create!(name: 'Skin Care')
     @discount1 = BulkDiscount.create!(percentage: 20, threshold: 10, merchant_id: @merchant1.id)
-    @discount4 = BulkDiscount.create!(percentage: 40, threshold: 12, merchant_id: @merchant2.id)
 
     @customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
     @customer_2 = Customer.create!(first_name: 'Cecilia', last_name: 'Jones')
@@ -49,7 +47,11 @@ describe 'merchant bulk discounts show page' do
   it 'shows the attributes' do 
     expect(page).to have_content(@discount1.percentage)
     expect(page).to have_content(@discount1.threshold)
-    expect(page).to_not have_content(@discount4.percentage)
-    expect(page).to_not have_content(@discount4.threshold)
+  end
+
+  it 'shows a link to edit the bulk discount' do 
+    expect(current_path).to eq(merchant_bulk_discount_path(@merchant1, @discount1))
+    click_link 'Edit'
+    expect(current_path).to eq(edit_merchant_bulk_discount_path(@merchant1, @discount1))
   end
 end
