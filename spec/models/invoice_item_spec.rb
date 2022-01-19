@@ -34,9 +34,116 @@ RSpec.describe InvoiceItem, type: :model do
       @ii_2 = InvoiceItem.create!(invoice_id: @i1.id, item_id: @item_2.id, quantity: 1, unit_price: 8, status: 0)
       @ii_3 = InvoiceItem.create!(invoice_id: @i2.id, item_id: @item_3.id, quantity: 1, unit_price: 5, status: 2)
       @ii_4 = InvoiceItem.create!(invoice_id: @i3.id, item_id: @item_3.id, quantity: 1, unit_price: 5, status: 1)
+
+
     end
     it 'incomplete_invoices' do
       expect(InvoiceItem.incomplete_invoices).to eq([@i1, @i3])
     end
+  end
+
+  it 'gives the best discount' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 10, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 1, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 10, threshold: 5)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+
+    expect(ii_01.best_discount).to eq(discount2)
+    expect(ii_011.best_discount).to eq(nil)
+  end
+
+  it 'none have the best discount' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+
+    #modified
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 4, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 1, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 10, threshold: 5)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+
+    expect(ii_01.best_discount).to eq(nil)
+    expect(ii_011.best_discount).to eq(nil)
+  end
+
+  it 'should have 10%, then 20% off' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+
+    #modified
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 7, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 10, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 10, threshold: 5)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+
+    expect(ii_01.best_discount).to eq(discount1)
+    expect(ii_011.best_discount).to eq(discount2)
+  end
+
+  it 'they both have the same discount' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+
+    #modified
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 12, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 15, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 15, threshold: 15)
+
+    expect(ii_01.best_discount).to eq(discount1)
+    expect(ii_011.best_discount).to eq(discount1)
+  end
+
+  it 'lists the total price per item' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 10, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 1, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 10, threshold: 5)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+
+    expect(ii_01.total_cost_per_item).to eq(100)
+    expect(ii_011.total_cost_per_item).to eq(10)
+  end
+
+  it 'lists the total cost with discount' do
+    merchant1 = Merchant.create!(name: 'Hair Care')
+    item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: merchant1.id, status: 1)
+    item_8 = Item.create!(name: "Butterfly Clip", description: "This holds up your hair but in a clip", unit_price: 5, merchant_id: merchant1.id)
+    customer_1 = Customer.create!(first_name: 'Joey', last_name: 'Smith')
+    invoice_1 = Invoice.create!(customer_id: customer_1.id, status: 2, created_at: "2012-03-27 14:54:09")
+    ii_01 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_1.id, quantity: 10, unit_price: 10, status: 2)
+    ii_011 = InvoiceItem.create!(invoice_id: invoice_1.id, item_id: item_8.id, quantity: 1, unit_price: 10, status: 1)
+
+    discount1 = merchant1.bulk_discounts.create!(percentage: 10, threshold: 5)
+    discount2 = merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
+
+    expect(ii_01.discount_savings).to eq(20)
+    expect(ii_01.total_cost_with_discount).to eq(80)
+    expect(ii_01.revised_cost_with_discount).to eq(80)
+    expect(ii_011.revised_cost_with_discount).to eq(10)
+
   end
 end

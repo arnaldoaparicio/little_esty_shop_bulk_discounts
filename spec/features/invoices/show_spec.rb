@@ -5,6 +5,8 @@ RSpec.describe 'invoices show' do
     @merchant1 = Merchant.create!(name: 'Hair Care')
     @merchant2 = Merchant.create!(name: 'Jewelry')
 
+
+
     @item_1 = Item.create!(name: "Shampoo", description: "This washes your hair", unit_price: 10, merchant_id: @merchant1.id, status: 1)
     @item_2 = Item.create!(name: "Conditioner", description: "This makes your hair shiny", unit_price: 8, merchant_id: @merchant1.id)
     @item_3 = Item.create!(name: "Brush", description: "This takes out tangles", unit_price: 5, merchant_id: @merchant1.id)
@@ -51,6 +53,7 @@ RSpec.describe 'invoices show' do
     @transaction6 = Transaction.create!(credit_card_number: 879799, result: 0, invoice_id: @invoice_6.id)
     @transaction7 = Transaction.create!(credit_card_number: 203942, result: 1, invoice_id: @invoice_7.id)
     @transaction8 = Transaction.create!(credit_card_number: 203942, result: 1, invoice_id: @invoice_8.id)
+    @discount1 = @merchant1.bulk_discounts.create!(percentage: 20, threshold: 10)
   end
 
   it "shows the invoice information" do
@@ -71,7 +74,6 @@ RSpec.describe 'invoices show' do
 
   it "shows the item information" do
     visit merchant_invoice_path(@merchant1, @invoice_1)
-
     expect(page).to have_content(@item_1.name)
     expect(page).to have_content(@ii_1.quantity)
     expect(page).to have_content(@ii_1.unit_price)
@@ -81,7 +83,6 @@ RSpec.describe 'invoices show' do
 
   it "shows the total revenue for this invoice" do
     visit merchant_invoice_path(@merchant1, @invoice_1)
-
     expect(page).to have_content(@invoice_1.total_revenue)
   end
 
@@ -93,11 +94,28 @@ RSpec.describe 'invoices show' do
       click_button "Update Invoice"
 
       expect(page).to have_content("cancelled")
-     end
+    end
 
-     within("#current-invoice-status") do
-       expect(page).to_not have_content("in progress")
-     end
+    within("#current-invoice-status") do
+      expect(page).to_not have_content("in progress")
+    end
   end
 
+  it 'shows the total discounted revenue' do
+    visit merchant_invoice_path(@merchant1, @invoice_1)
+    expect(page).to have_content(@invoice_1.total_discounted_revenue)
+    expect(page).to have_content('Total Discounted Revenue: 147.6')
+  end
+
+  it 'shows the discounts linked' do
+    visit merchant_invoice_path(@merchant1, @invoice_1)
+    expect(page).to have_content('n/a')
+    expect(page).to have_content('20% discount')
+  end
+
+  it 'does not show the discounts linked' do
+    visit merchant_invoice_path(@merchant1, @invoice_2)
+    expect(page).to have_content('n/a')
+    expect(page).to_not have_content('20% discount')
+  end
 end
